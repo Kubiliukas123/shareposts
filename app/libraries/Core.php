@@ -1,0 +1,62 @@
+<?php
+
+/* 
+*app Core class
+*sukuria URL ir uzkrauna Core controller
+URL FORMATAS - /controller/method/params
+*
+*/
+class Core{
+    protected $currentController = 'Pages';
+    protected $currentMethod = 'index';
+    protected $params = [];
+
+    public function __construct(){
+    //    print_r($this->getUrl());
+        $url = $this->getUrl();
+if ($url) {
+    
+    // controleryje iesko pirmos vertes
+    if (file_exists('../app/controllers/' . ucwords($url[0]). '.php')) {
+        // jei egzistuoja tai nustatyti kaip controller
+        $this->currentController = ucwords($url[0]);
+        unset($url[0]);
+    }
+}
+
+        // reikalauja controllerio
+        require_once '../app/controllers/'. $this->currentController . '.php';
+
+        // ir ji inst 
+        $this->currentController = new $this->currentController;
+        
+        // patikrtinti antrai url daliai
+
+        if (isset($url[1])) {
+            // Tikrinam ar metodas egzistuoja kontroleryje
+            if (method_exists($this->currentController, $url[1])) {
+                $this->currentMethod = $url[1];
+                // unset 1 index
+                unset($url[1]);
+
+            }
+
+        }
+        // gauti parametrus
+
+        $this->params = $url ? array_values($url) : [];
+
+        // iskviesti callback? su params arejum
+
+        call_user_func_array([$this->currentController, $this->currentMethod], $this->params);
+    }
+    
+    public function getUrl(){
+        if (isset($_GET['url'])) {
+            $url = rtrim($_GET['url'], '/');
+            $url = filter_var($url, FILTER_SANITIZE_URL);
+            $url = explode('/', $url);
+            return $url;
+        }
+    }
+}
